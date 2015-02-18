@@ -22,12 +22,13 @@ libraryDependencies ++= Seq(
   "com.google.code.gson" % "gson" % "2.3",
   "com.jayway.jsonpath" % "json-path" % "1.2.0",
   "com.fasterxml.jackson.core" % "jackson-databind" % "2.3.4",
-  "com.fasterxml.jackson.core" % "jackson-core" % "2.3.4",  
-  "org.apache.hadoop" % "hadoop-common" % "2.4.1", 
-  "org.apache.hadoop" % "hadoop-hdfs" % "2.4.1", 
-  "org.apache.hadoop" % "hadoop-client" % "2.4.1"   
+  "com.fasterxml.jackson.core" % "jackson-core" % "2.3.4",    
+  "org.apache.spark" %% "spark-core" % "1.2.0"     
 )
 
+//"org.apache.hadoop" % "hadoop-common" % "2.4.1", 
+//"org.apache.hadoop" % "hadoop-hdfs" % "2.4.1", 
+//"org.apache.hadoop" % "hadoop-client" % "2.4.1",
 //assemblySettings
 
 //unmanagedBase := baseDirectory.value / "custom_lib"

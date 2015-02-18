@@ -46,6 +46,7 @@ class DataStoreRDD (
       }
 
       override def close() {
+        dataReader.close()
         logInfo("Closing the iterator")
       }
     }

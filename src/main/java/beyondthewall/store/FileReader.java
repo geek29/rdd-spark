@@ -12,16 +12,14 @@ public class FileReader {
 
 	private DataStoreConf conf=null;
 	private String path=null;
-	private ObjectInputStream ois = null;
-	private Collector collector = null;
+	private ObjectInputStream ois = null;	
 	private String jsonPath = null;
 	private JsonPathEvaluator evaluator=null;
 	public static final String EMPTY_JSON_PATH_RESULT="EMPTY_JSON_PATH_RESULT";
 	
 	public FileReader(DataStoreConf conf, String path, Collector collector, Query query){
 		this.conf = conf;
-		this.path = path;
-		this.collector = collector;
+		this.path = path;		
 		this.jsonPath = query.getJsonPath();
 		if(jsonPath!=null){
 			try {

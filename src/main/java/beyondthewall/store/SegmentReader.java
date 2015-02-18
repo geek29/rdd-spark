@@ -3,7 +3,7 @@ package beyondthewall.store;
 import java.io.File;
 import static beyondthewall.store.FileReader.EMPTY_JSON_PATH_RESULT;
 
-public class SegmentReader {
+public class SegmentReader implements DataIterator {
 	
 	private FileReader fileReader = null;
 	private Collector collector = null;
@@ -45,13 +45,16 @@ public class SegmentReader {
 		return count;
 	}
 	
-	public Object readNext(){
+	public Object readNext(){		
 		Object obj = fileReader.readNext();
 		if(obj==null){
 			//fileReader.close();
 			fileReader = null;
 		}
-		return obj;
+		
+		if(!EMPTY_JSON_PATH_RESULT.equals(obj))
+			return obj;
+		else return null;
 	}
 
 }

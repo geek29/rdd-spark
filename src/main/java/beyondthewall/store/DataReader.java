@@ -32,6 +32,14 @@ public class DataReader {
 		completionService = new ExecutorCompletionService(executor);
 		fileStructure = readMetadata();
 	}
+	
+	
+
+	public DataStoreConf getConf() {
+		return conf;
+	}
+
+
 
 	private Map<String, SortedSet<Long>> readMetadata() {
 		Map<String, SortedSet<Long>> fileStructure = new HashMap<String,SortedSet<Long>>();		
@@ -88,6 +96,21 @@ public class DataReader {
 				break;
 			}
 		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public DataIterator iteratorForQuery(Query query, String segment){		
+		long from = query.getFrom();
+		long to = query.getTo();
+		SegmentReader reader=null;
+		List<SegmentKey> targetedSegments = findRange(from,to);
+		for(SegmentKey key : targetedSegments){
+			if(segment.equals(key.getName())){				
+				reader = new SegmentReader(conf, key, null, query);				
+				break;
+			}
+		}
+		return reader;
 	}
 
 	@SuppressWarnings("unchecked")

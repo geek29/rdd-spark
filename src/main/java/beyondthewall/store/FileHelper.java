@@ -3,9 +3,13 @@ package beyondthewall.store;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 
 
-public interface FileHelper {
+public interface FileHelper extends Serializable{
+	
+	//Serializable is due to spark closure being sent over wire
+	//Need to make it transient
 	
 	public boolean checkExistsThrow(String path);
 	

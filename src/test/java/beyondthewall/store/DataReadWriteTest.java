@@ -26,6 +26,7 @@ public class DataReadWriteTest extends TestCase {
 		return new DataStoreConf(dir.getAbsolutePath(),namespace,segments);
 	}
 	
+	
 	public void testDataWriteAddSlice(){
 		
 		DataStoreConf conf = createConf(5);
@@ -46,15 +47,8 @@ public class DataReadWriteTest extends TestCase {
 
 		
 		final ConcurrentLinkedQueue<Object> resultList = new ConcurrentLinkedQueue<Object>();
-		DataReader reader = new DataReader(conf);
-		reader.query(new Collector(){
-			@Override
-			public void collect(SegmentKey key, Object object) {
-				if(DEBUG)
-					System.out.println("Read " + object + " segment=" + key.getName() + " slice="+ key.getTs());
-				resultList.add(object);				
-			}			
-		}, Query.range(Long.MIN_VALUE, Long.MAX_VALUE));
+		DataReader reader = new DataReader(conf);		
+		reader.query(new TestResultCollector(resultList, DEBUG), Query.range(Long.MIN_VALUE, Long.MAX_VALUE));
 		assertEquals(5,resultList.size());
 		
 		try {
@@ -76,32 +70,17 @@ public class DataReadWriteTest extends TestCase {
 		writer.close();
 		
 		final ConcurrentLinkedQueue<Object> resultList2 = new ConcurrentLinkedQueue<Object>();
-		reader = new DataReader(conf);
-		
+		reader = new DataReader(conf);		
 		Map<String,SortedSet<Long>> metaData = reader.getMetaData();
 		if(DEBUG)
 			System.out.println("MetaData : " + metaData);
-		reader.query(new Collector(){
-			@Override
-			public void collect(SegmentKey key, Object object) {
-				if(DEBUG)
-					System.out.println("Read " + object + " segment=" + key.getName() + " slice="+ key.getTs());
-				resultList2.add(object);				
-			}			
-		}, Query.range(ts+1, Long.MAX_VALUE));
+		reader.query(new TestResultCollector(resultList2, DEBUG), Query.range(ts+1, Long.MAX_VALUE));
 		assertEquals(10,resultList2.size());
 		
 		//Query for all records
 		final ConcurrentLinkedQueue<Object> resultList3 = new ConcurrentLinkedQueue<Object>();
 		reader = new DataReader(conf);
-		reader.query(new Collector(){
-			@Override
-			public void collect(SegmentKey key, Object object) {
-				if(DEBUG)
-					System.out.println("Read " + object + " segment=" + key.getName() + " slice="+ key.getTs());
-				resultList3.add(object);				
-			}			
-		}, Query.range(Long.MIN_VALUE, Long.MAX_VALUE));
+		reader.query(new TestResultCollector(resultList3, DEBUG), Query.range(Long.MIN_VALUE, Long.MAX_VALUE));
 		assertEquals(15,resultList3.size());
 		
 	}
@@ -146,14 +125,7 @@ public class DataReadWriteTest extends TestCase {
 		reader.refresh();
 				
 		final ConcurrentLinkedQueue<Object> resultList = new ConcurrentLinkedQueue<Object>();
-		reader.query(new Collector(){
-			@Override
-			public void collect(SegmentKey key, Object object) {
-				if(DEBUG)
-					System.out.println("Read " + object + " segment=" + key.getName() + " slice="+ key.getTs());
-				resultList.add(object);				
-			}			
-		}, Query.range(Long.MIN_VALUE, Long.MAX_VALUE));
+		reader.query(new TestResultCollector(resultList, DEBUG), Query.range(Long.MIN_VALUE, Long.MAX_VALUE));
 		assertEquals(25,resultList.size());
 		
 	}
@@ -203,16 +175,8 @@ public class DataReadWriteTest extends TestCase {
 		DataReader reader = new DataReader(conf);
 		
 		for(int i=0;i<expectedSize.length;i++){
-			final ConcurrentLinkedQueue<Object> resultList = new ConcurrentLinkedQueue<Object>();
-			
-			reader.query(new Collector(){
-				@Override
-				public void collect(SegmentKey key, Object object) {
-					if(DEBUG)
-						System.out.println("Read " + object + " segment=" + key.getName() + " slice="+ key.getTs());
-					resultList.add(object);				
-				}			
-			}, Query.range(queryIntervals[i][0], queryIntervals[i][1]));
+			final ConcurrentLinkedQueue<Object> resultList = new ConcurrentLinkedQueue<Object>();			
+			reader.query(new TestResultCollector(resultList, DEBUG), Query.range(queryIntervals[i][0], queryIntervals[i][1]));
 			if(DEBUG)
 				System.out.println("for testcase "+i + " resultSize="+ resultList.size());
 			assertEquals(expectedSize[i],resultList.size());
@@ -241,14 +205,7 @@ public class DataReadWriteTest extends TestCase {
 		
 		final ConcurrentLinkedQueue<Object> resultList = new ConcurrentLinkedQueue<Object>();
 		DataReader reader = new DataReader(conf);
-		reader.query(new Collector(){
-			@Override
-			public void collect(SegmentKey key, Object object) {
-				if(DEBUG)
-					System.out.println("Read " + object + " segment=" + key.getName() + " slice="+ key.getTs());
-				resultList.add(object);				
-			}			
-		}, Query.range(Long.MIN_VALUE, Long.MAX_VALUE).jsonPath("[?(@.id < 4)]"));
+		reader.query(new TestResultCollector(resultList, DEBUG), Query.range(Long.MIN_VALUE, Long.MAX_VALUE).jsonPath("[?(@.id < 4)]"));
 		assertEquals(4,resultList.size());
 		resultList.clear();
 		
@@ -285,15 +242,43 @@ public class DataReadWriteTest extends TestCase {
 		for(int k=1;k<=5;k++){
 			final List<Object> resultList = new ArrayList<Object>();
 			DataReader reader = new DataReader(conf);
-			reader.query(new Collector(){
-				@Override
-				public void collect(SegmentKey key, Object object) {
-					if(DEBUG)
-						System.out.println("Read " + object + " segment=" + key.getName() + " slice="+ key.getTs());
-					resultList.add(object);				
-				}			
-			}, Query.range(Long.MIN_VALUE, Long.MAX_VALUE),""+k);
+			reader.query(new TestResultCollector(resultList, DEBUG), Query.range(Long.MIN_VALUE, Long.MAX_VALUE),""+k);
 			//System.out.println("For "+ k + "th segment resultList="+resultList.size());
+			assertEquals(k,resultList.size());
+			resultList.clear();
+		}
+	}
+	
+	public void testForIterator(){
+		DataStoreConf conf = createConf(10);
+		DataWriter writer = new DataWriter(conf);		
+		
+		String objectTemplate = "{ \"id\": {{genId}} , \"name\" : \"{{genName}}\" }";
+		
+		for(int k=1;k<=5;k++)
+		for(int i=0;i<k;i++){
+			String segmentNum = ""+k; 
+			String t = objectTemplate.replace("{{genId}}", ""+i);
+			t = t.replace("{{genName}}", "Name"+i);
+			writer.addJSON(segmentNum, t);
+			if(DEBUG)
+				System.out.println("Write " + t + " in slice=" + writer.getCurrentSlice() + " seg="+ i);
+		}
+		writer.close();
+
+		for(int k=1;k<=5;k++){
+			final List<Object> resultList = new ArrayList<Object>();
+			DataReader reader = new DataReader(conf);
+			DataIterator iterator = reader.iteratorForQuery(Query.range(Long.MIN_VALUE, Long.MAX_VALUE),""+k);
+			Object result = null;
+			while(true){
+				result = iterator.readNext();
+				if(result==null)
+					break;
+				else resultList.add(result);
+			}
+			if(DEBUG)
+				System.out.println("For "+ k + "th segment resultList="+resultList.size());
 			assertEquals(k,resultList.size());
 			resultList.clear();
 		}

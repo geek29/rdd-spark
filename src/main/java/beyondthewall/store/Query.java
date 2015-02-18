@@ -1,10 +1,11 @@
 package beyondthewall.store;
 
+import java.io.Serializable;
 import java.util.Set;
 
 import com.jayway.jsonpath.Predicate;
 
-public class Query {
+public class Query implements Serializable{
 	
 	private long from, to;
 	private String jsonPath=null;
